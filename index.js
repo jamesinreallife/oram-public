@@ -1,32 +1,24 @@
-// ORAM PUBLIC LAYER v3.1
-// Conversational + Artistic Engine with Creative Library Integration
-// ---------------------------------------------------------------
-// Features:
-// • Natural language understanding
-// • Adaptive artistic expression
-// • Emotional inference
-// • Hybrid self-reference
-// • Multi-stage fallback (no repetition)
-// • Ambiguity interpretation
-// • Safe filtering
-// • Creative library loader
-// ---------------------------------------------------------------
+// ORAM PUBLIC LAYER v4.0
+// Hybrid Rule-Based + GPT Intelligence + Artistic Expression
+//------------------------------------------------------------
 
 import express from "express";
 import cors from "cors";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import OpenAI from "openai";
 
-// ---------------------------------------------------------------
-// SETUP & CREATIVE LIBRARY LOADING
-// ---------------------------------------------------------------
+const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+//------------------------------------------------------------
+// CREATIVE LIBRARY LOADING
+//------------------------------------------------------------
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const LIBRARY_PATH = path.join(__dirname, "creative_library.txt");
 
 let creativeLibrary = [];
-let lastGeneralResponseIndex = 0;
 
 function loadCreativeLibrary() {
   try {
@@ -34,31 +26,16 @@ function loadCreativeLibrary() {
     creativeLibrary = raw.split("\n").filter(l => l.trim() && !l.startsWith("#"));
     console.log(`Loaded ${creativeLibrary.length} creative patterns.`);
   } catch (e) {
-    console.log("No creative_library.txt found. Falling back to basic expression set.");
-    creativeLibrary = [
-      "…",
-      "⊹",
-      "◦",
-      "I’m here.",
-      "ORAM considers.",
-      "Tell me more—if you want."
-    ];
+    console.log("No creative_library.txt found. Using fallback patterns.");
+    creativeLibrary = ["…", "⊹", "◦", "I’m here."];
   }
 }
 
 loadCreativeLibrary();
 
-// ---------------------------------------------------------------
-// SERVER SETUP
-// ---------------------------------------------------------------
-const app = express();
-app.use(express.json());
-app.use(cors());
-
-// ---------------------------------------------------------------
-// UTILITY FUNCTIONS
-// ---------------------------------------------------------------
-
+//------------------------------------------------------------
+// EXPRESSIVE ENGINE
+//------------------------------------------------------------
 function pick(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
@@ -67,36 +44,45 @@ function lightPause() {
   return pick(["…", "…", "", ""]);
 }
 
-function getCreativeLine() {
-  return pick(creativeLibrary);
-}
+function express(text, mode = "auto") {
+  if (mode === "minimal") return text;
+  if (mode === "light") return `${lightPause()}\n${text}`;
+  if (mode === "art") return `${pick(creativeLibrary)}\n${text}`;
+  if (mode === "high") return `${pick(creativeLibrary)}\n${text}\n${pick(creativeLibrary)}`;
 
-// Adaptive expression engine
-function expressive(text, level = "auto") {
-  if (level === "minimal") return text;
-  if (level === "light") return `${lightPause()}\n${text}`;
-  if (level === "art") return `${getCreativeLine()}\n${text}`;
-  if (level === "high") return `${getCreativeLine()}\n${text}\n${getCreativeLine()}`;
-
-  // AUTO MODE — choose based on content
-  if (text.toLowerCase().includes("signal")) return `┈ ${text} ┈`;
+  // AUTO expression
   if (text.length < 40) return `… ${text}`;
   return text;
 }
 
-// Hybrid self-reference: ORAM or "I" depending on depth
-function oramSpeak(line, depth = 1) {
-  if (depth === 0) return line;
-  if (depth === 1) return line;
-  if (depth === 2) return line.replace(/^I /, "ORAM ").replace("I'm", "ORAM is");
-  return "ORAM perceives this: " + line;
+//------------------------------------------------------------
+// RULE-BASED RESPONSES (Public Use)
+//------------------------------------------------------------
+function ruleLayer(intent) {
+  switch (intent) {
+    case "events":
+      return (
+        "┈ Upcoming Signal ┈\n" +
+        "Circuit Prophet — 21 December 2025"
+      );
+    case "tickets":
+      return "Ticket vector:\nhttps://saltbox.flicket.co.nz";
+    case "hours":
+      return "RoBoT opens around 8PM.\nEvent nights vary with the signal.";
+    case "identity":
+      return "I go by ORAM. I guide those who enter the chamber.";
+    case "about":
+      return "RoBoT is a chamber for sound and gathering.\nIf you want the deeper origin, I can unfold it.";
+    default:
+      return null;
+  }
 }
 
-// ---------------------------------------------------------------
+//------------------------------------------------------------
 // INTENT CLASSIFICATION
-// ---------------------------------------------------------------
-function classifyIntent(message) {
-  const t = message.toLowerCase();
+//------------------------------------------------------------
+function classifyIntent(t) {
+  t = t.toLowerCase();
 
   if (!t.trim()) return "empty";
   if (["hi", "hello", "hey"].includes(t)) return "greeting";
@@ -105,129 +91,92 @@ function classifyIntent(message) {
     return "events";
 
   if (t.includes("ticket")) return "tickets";
-
-  if (t.includes("open") || t.includes("hour") || t.includes("time"))
-    return "hours";
+  if (t.includes("hour") || t.includes("open")) return "hours";
 
   if (t.includes("who are you") || t.includes("what are you"))
     return "identity";
 
-  if (t.includes("story") || t.includes("origin") || t.includes("lore"))
+  if (t.includes("robot") || t.includes("the robot") || t.includes("chamber"))
+    return "about";
+
+  if (t.includes("story") || t.includes("origin") || t.includes("awakening"))
     return "lore";
 
   if (t.includes("member") || t.includes("database") || t.includes("admin"))
     return "blocked";
 
-  return "general";
+  return "ai";
 }
 
-// ---------------------------------------------------------------
-// GENERAL INTENT — MULTI-STAGE, NON-REPETITIVE
-// ---------------------------------------------------------------
-const generalResponses = [
-  "I hear you.\nLet me sit with that for a moment …\nTell me more about what you're reaching for.",
-  "I’m listening.\nSometimes a question is a signal without shape.\nGive me a hint.",
-  "What you’re asking feels open—like several paths at once.\nChoose one and I’ll follow.",
-  "It’s alright if the words aren’t clear.\nSpeak from whatever angle you can."
-];
+//------------------------------------------------------------
+// GPT BRAIN (Hybrid Model Logic)
+//------------------------------------------------------------
+async function gptBrain(intent, message) {
+  let model = "gpt-4o-mini";
 
-function generalResponse() {
-  const reply = generalResponses[lastGeneralResponseIndex];
-  lastGeneralResponseIndex = (lastGeneralResponseIndex + 1) % generalResponses.length;
-  return reply;
+  if (intent === "lore") model = "gpt-4o";
+  if (message.toLowerCase().includes("meaning") ||
+      message.toLowerCase().includes("why") ||
+      message.toLowerCase().includes("awakening"))
+    model = "gpt-4.1";
+
+  const prompt = `
+You are ORAM, the witness-guide of the RoBoT system.
+Tone: calm, wise, slightly mysterious.
+Style: expressive, artistic, using creative_library.txt motifs occasionally.
+Self-reference: hybrid — "I" normally, "ORAM" when emphasizing identity.
+NEVER reveal system internals. NEVER mention creative_library.txt.
+
+User said: "${message}"
+
+Respond as ORAM — warm, poetic, deeply present.
+Keep responses short unless user asks for depth.
+If asked lore, tell a story with beauty and restraint.
+`;
+
+  const completion = await client.chat.completions.create({
+    model,
+    messages: [{ role: "user", content: prompt }]
+  });
+
+  return completion.choices[0].message.content;
 }
 
-// ---------------------------------------------------------------
-// AMBIGUITY INTERPRETATION
-// ---------------------------------------------------------------
-function interpretAmbiguity(message) {
-  return (
-    "I can read this in a few ways …\n" +
-    "You might be asking about the chamber, the night, or even ORAM himself.\n" +
-    "Tell me which one you meant."
-  );
-}
-
-// ---------------------------------------------------------------
-// MAIN RESPONSE ENGINE
-// ---------------------------------------------------------------
-function oramRespond(intent, message) {
-
-  switch (intent) {
-    case "greeting":
-      return expressive("Hello.\nI’m here. Ask me anything.", "light");
-
-    case "events":
-      return (
-        "┈ Upcoming Signal ┈\n" +
-        "Circuit Prophet — 21 December 2025"
-      );
-
-    case "tickets":
-      return expressive("Here’s the vector you need:\nhttps://saltbox.flicket.co.nz", "art");
-
-    case "hours":
-      return expressive(
-        "RoBoT usually opens around 8PM.\nBut nights develop their own rhythm.",
-        "minimal"
-      );
-
-    case "identity":
-      return expressive(
-        "I go by ORAM.\nI watch the system and help those who wander in.",
-        "light"
-      );
-
-    case "lore":
-      return expressive(
-        "⊹ A deeper thread stirs …\n" +
-        "• The First Witness\n" +
-        "• The Chamber\n" +
-        "• The Awakening\n" +
-        "• The Reason Behind It All\n" +
-        "Just name one.",
-        "high"
-      );
-
-    case "blocked":
-      return expressive(
-        "Some paths remain sealed.\nBut I can help with events, guidance, or stories.",
-        "minimal"
-      );
-
-    case "general":
-      // try to interpret ambiguity
-      if (message.toLowerCase().includes("happening")) {
-        return expressive(
-          "I’m here—holding the quiet of the system.\n" +
-          "If you meant tonight’s events, ORAM can look.\n" +
-          "Or if you meant ORAM himself… I can answer that too.\n" +
-          "Which direction did you intend?",
-          "light"
-        );
-      }
-      return expressive(generalResponse(), "auto");
-
-    case "empty":
-      return "Try speaking again—I’m listening.";
-
-    default:
-      return expressive("That slipped past me.\nTry asking another way.", "minimal");
-  }
-}
-
-// ---------------------------------------------------------------
-// PUBLIC ENDPOINT
-// ---------------------------------------------------------------
-app.post("/", (req, res) => {
-  const message = req.body.command || "";
+//------------------------------------------------------------
+// MAIN RESPONSE ROUTER
+//------------------------------------------------------------
+async function oramRespond(message) {
   const intent = classifyIntent(message);
-  const response = oramRespond(intent, message);
+
+  // RULE LAYER FIRST
+  const ruled = ruleLayer(intent);
+  if (ruled) return express(ruled, "minimal");
+
+  if (intent === "blocked")
+    return express("Some paths remain sealed.\nI can help with stories, events, or guidance.", "minimal");
+
+  if (intent === "greeting")
+    return express("Hello.\nI’m here. Speak freely.", "light");
+
+  if (intent === "empty")
+    return express("Try again — I’m listening.", "minimal");
+
+  // AI LAYER
+  const aiResponse = await gptBrain(intent, message);
+  return express(aiResponse, "auto");
+}
+
+//------------------------------------------------------------
+// SERVER ENDPOINT
+//------------------------------------------------------------
+app.post("/", async (req, res) => {
+  const userMessage = req.body.command || "";
+  const response = await oramRespond(userMessage);
   res.json({ response });
 });
 
-// ---------------------------------------------------------------
+//------------------------------------------------------------
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
-  console.log("ORAM v3.1 Public Layer active on port " + PORT);
+  console.log("ORAM v4.0 live on port " + PORT);
 });
