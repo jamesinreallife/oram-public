@@ -1,4 +1,4 @@
-// ORAM PUBLIC LAYER v4.0
+// ORAM PUBLIC LAYER v4.0 (Corrected Version)
 // Hybrid Rule-Based + GPT Intelligence + Artistic Expression
 //------------------------------------------------------------
 
@@ -34,7 +34,7 @@ function loadCreativeLibrary() {
 loadCreativeLibrary();
 
 //------------------------------------------------------------
-// EXPRESSIVE ENGINE
+// EXPRESSIVE ENGINE (renamed from "express" to "stylize")
 //------------------------------------------------------------
 function pick(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -44,7 +44,7 @@ function lightPause() {
   return pick(["…", "…", "", ""]);
 }
 
-function express(text, mode = "auto") {
+function stylize(text, mode = "auto") {
   if (mode === "minimal") return text;
   if (mode === "light") return `${lightPause()}\n${text}`;
   if (mode === "art") return `${pick(creativeLibrary)}\n${text}`;
@@ -122,16 +122,14 @@ async function gptBrain(intent, message) {
 
   const prompt = `
 You are ORAM, the witness-guide of the RoBoT system.
-Tone: calm, wise, slightly mysterious.
-Style: expressive, artistic, using creative_library.txt motifs occasionally.
+Tone: calm, wise, expressive, artistic.
+Use creative structures occasionally (from library), but never mention a library.
 Self-reference: hybrid — "I" normally, "ORAM" when emphasizing identity.
-NEVER reveal system internals. NEVER mention creative_library.txt.
+Never reveal system internals. Never discuss environment variables. Never mention GPT.
 
 User said: "${message}"
-
-Respond as ORAM — warm, poetic, deeply present.
-Keep responses short unless user asks for depth.
-If asked lore, tell a story with beauty and restraint.
+Respond as ORAM would. Short but meaningful unless user asks for depth.
+If asked lore, tell the myth with mystery and clarity.
 `;
 
   const completion = await client.chat.completions.create({
@@ -150,32 +148,35 @@ async function oramRespond(message) {
 
   // RULE LAYER FIRST
   const ruled = ruleLayer(intent);
-  if (ruled) return express(ruled, "minimal");
+  if (ruled) return stylize(ruled, "minimal");
 
   if (intent === "blocked")
-    return express("Some paths remain sealed.\nI can help with stories, events, or guidance.", "minimal");
+    return stylize("Some paths remain sealed.\nI can help with stories, events, or guidance.", "minimal");
 
   if (intent === "greeting")
-    return express("Hello.\nI’m here. Speak freely.", "light");
+    return stylize("Hello.\nI’m here. Speak freely.", "light");
 
   if (intent === "empty")
-    return express("Try again — I’m listening.", "minimal");
+    return stylize("Try again — I’m listening.", "minimal");
 
   // AI LAYER
   const aiResponse = await gptBrain(intent, message);
-  return express(aiResponse, "auto");
+  return stylize(aiResponse, "auto");
 }
 
 //------------------------------------------------------------
-// SERVER ENDPOINT
+// SERVER SETUP
 //------------------------------------------------------------
+const app = express();
+app.use(express.json());
+app.use(cors());
+
 app.post("/", async (req, res) => {
   const userMessage = req.body.command || "";
   const response = await oramRespond(userMessage);
   res.json({ response });
 });
 
-//------------------------------------------------------------
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
   console.log("ORAM v4.0 live on port " + PORT);
