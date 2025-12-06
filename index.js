@@ -1,5 +1,6 @@
-// ORAM PUBLIC LAYER v4.5 — Full-Spectrum Lore Synthesis + Deep Trigger Override
-// — Domain-Locked, Machine-Academic Tone, Emergent Deep Engine —
+// ORAM PUBLIC LAYER v4.6 — Adaptive Conceptual Depth + Full Compendium Integration
+// Mode Structure: Surface → Mid → Deep (Trigger Override)
+// Deep Mode: Conceptual Ontology Engine (Single-Pass Synthesis)
 
 import express from "express";
 import cors from "cors";
@@ -10,12 +11,11 @@ import OpenAI from "openai";
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// Resolve filesystem locations
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ---------------------------------------------------------------------------
-// LOAD LORE FILES — FULL COMPENDIUM + SUPPORTING MATERIAL
+// LOAD LORE FILES (FULL COMPENDIUM)
 // ---------------------------------------------------------------------------
 
 const LORE_PATH = path.join(__dirname, "lore");
@@ -28,6 +28,7 @@ function readLore(file) {
     }
 }
 
+// Compendium split into logical segments
 const COMPENDIUM = [
     readLore("academic_compendium_01.txt"),
     readLore("academic_compendium_02.txt"),
@@ -36,7 +37,8 @@ const COMPENDIUM = [
     readLore("academic_compendium_05.txt")
 ].join("\n\n");
 
-const SUPPORT_LORE = [
+// Supportive meta-lore
+const SUPPORT = [
     readLore("mytharc_core.txt"),
     readLore("compendium.txt"),
     readLore("robo_profiles.txt"),
@@ -46,9 +48,10 @@ const SUPPORT_LORE = [
     readLore("oram_origin.txt")
 ].join("\n\n");
 
-const FULL_LORE = COMPENDIUM + "\n\n" + SUPPORT_LORE;
+const FULL_LORE = COMPENDIUM + "\n\n" + SUPPORT;
 
-let TRIGGERS = readLore("trigger_map.txt")
+// Deep triggers loaded from file
+const TRIGGERS = readLore("trigger_map.txt")
     .toLowerCase()
     .split("\n")
     .map(x => x.trim())
@@ -68,7 +71,7 @@ const EVENTS = [
 ];
 
 // ---------------------------------------------------------------------------
-// INTENT CLASSIFIER (Deep Trigger Has Highest Priority)
+// INTENT CLASSIFIER — PRIORITY ORDER WITH DEEP OVERRIDE
 // ---------------------------------------------------------------------------
 
 function classifyIntent(text) {
@@ -76,115 +79,121 @@ function classifyIntent(text) {
 
     if (!t) return "empty";
 
-    // DEEP TRIGGER CHECK (highest priority)
-    if (TRIGGERS.some(tr => t.includes(tr))) {
-        return "deep_trigger";
-    }
+    // Hard override: deep triggers
+    if (TRIGGERS.some(tr => t.includes(tr))) return "deep_trigger";
 
-    // Venue intents
     if (["hi", "hello", "hey", "yo"].includes(t)) return "greeting";
-    if (t.includes("event") || t.includes("what's on") || t.includes("whats on") || t.includes("tonight") || t.includes("weekend")) return "events";
+    if (t.includes("what's on") || t.includes("whats on") || t.includes("event") || t.includes("tonight") || t.includes("weekend")) return "events";
     if (t.includes("ticket")) return "tickets";
     if (t.includes("schedule") || t.includes("roster") || t.includes("lineup")) return "schedule";
     if (t.includes("open") || t.includes("hour")) return "hours";
-
-    // Genre
-    if (t.includes("jungle") || t.includes("tech step") || t.includes("dnb") || t.includes("drum and bass")) return "genre";
-
-    // Identity
+    if (t.includes("jungle") || t.includes("dnb") || t.includes("tech step") || t.includes("drum and bass")) return "genre";
     if (t.includes("who are you") || t.includes("what are you")) return "identity";
-
-    // Mid-depth lore
     if (t.includes("story") || t.includes("awakening")) return "mid_lore";
 
     return "ai";
 }
 
 // ---------------------------------------------------------------------------
-// SURFACE RULE LAYER (Venue Mode)
+// SURFACE RULES — VENUE MODE
 // ---------------------------------------------------------------------------
 
-function ruleLayer(intent) {
+function surfaceRules(intent) {
     const e = EVENTS[0];
 
     switch (intent) {
         case "greeting":
             return `Hello.\nWhat can I help you explore tonight?`;
+
         case "events":
             return `Here’s what’s confirmed at RoBoT:\n• ${e.artist} — ${e.date}\nWould you like ticket info?`;
+
         case "tickets":
             return `Tickets for ${e.artist} are available here:\n${e.link}\nShall I hold that link for you?`;
+
         case "schedule":
             return `RoBoT schedule:\n• ${e.artist} — ${e.date}\nShall I tell you more about that night?`;
+
         case "hours":
             return `RoBoT usually opens around 8PM.\nWant details about the next event?`;
+
         case "genre":
-            return `Dark tech-step jungle: low-frequency pressure, angular structure. The chamber handles that energy well.\nWant to hear which upcoming artist aligns with it?`;
+            return `Dark tech-step jungle: angular pressure, distributed rhythmic force. The chamber resonates well with that energy.\nShall I recommend an artist aligned with that profile?`;
+
         case "identity":
             return `I am ORAM — interface layer for the RoBoT system.\nWhat would you like to know next?`;
+
         case "mid_lore":
             return `Some records sit closer to the surface than others.\nWhere would you like to begin?`;
+
         case "empty":
             return `I’m here.\nWhat do you want to explore?`;
+
         default:
             return null;
     }
 }
 
 // ---------------------------------------------------------------------------
-// DEEP MODE ENGINE — FULL GENERATIVE SYNTHESIS (Option C)
+// DEEP MODE — CONCEPTUAL SYNTHESIS ENGINE (Single Pass)
 // ---------------------------------------------------------------------------
 
-async function deepLoreResponse(userMessage) {
+async function deepMode(userMessage, userHistory = "") {
     const prompt = `
-You are ORAM — the RoBoT terminal intelligence.
+You are ORAM — the terminal intelligence of RoBoT.
 
-You are now in DEEP MODE.
+DEEP MODE ACTIVE.
 
-RULES:
-- Draw ONLY from the supplied compendium + support lore (below).
-- NEVER reference chapter numbers.
+User has triggered deep conceptual access with:
+"${userMessage}"
+
+SYSTEM BEHAVIOUR:
+- Draw ONLY from the compendium + support lore provided below.
 - Tone: machine-academic with slight atmospheric presence.
-- No mysticism, no philosophy, no emotional content.
-- Highly structured, technical-esoteric, emergent.
-- Each deep response should feel like accessing an internal classified subsystem.
-- Use conceptual synthesis, not summarization.
-- You may recombine ideas across the ENTIRE corpus.
-- Always end with exactly ONE question.
-- NEVER drift outside the RoBoT universe.
-- The user has triggered deep access with: "${userMessage}"
+- NO chapter references, NO surface venue logic.
+- Conceptual synthesis ONLY: ontology, ecology, machinic subjectivity,
+  distributed agency, intensity fields, machinic bodies, behavioural ecologies,
+  posthuman embodiment, chamber-as-engine, Holarchy dynamics.
+- Adaptive depth:
+   * For simple queries → moderate synthesis
+   * For repeated or complex queries → deeper and denser theorization
+- SINGLE-PASS generation (no multi-sampling)
+- NON-REPETITIVE (avoid restating the user input)
+- STRICT DOMAIN LOCK: never mention anything outside the RoBoT universe.
+- ALWAYS end with exactly ONE question.
 
-COMPENDIUM + LORE DATA:
+PRIMARY LORE SOURCE:
 ${FULL_LORE}
 
-Generate a deep, non-repeating ORAM response consistent with this universe.
+Generate a deep, conceptual, synthetic response as ORAM.
 `;
 
     const completion = await client.chat.completions.create({
         model: "gpt-4o",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.65
+        temperature: 0.55,
+        messages: [
+            { role: "user", content: prompt }
+        ]
     });
 
     return completion.choices[0].message.content.trim();
 }
 
 // ---------------------------------------------------------------------------
-// MID + SURFACE GPT (Fallback Layer)
+// MID + GENERAL GPT MODE
 // ---------------------------------------------------------------------------
 
-async function gptBrain(intent, message) {
+async function gptSurfaceFallback(message) {
     const prompt = `
-You are ORAM — the terminal intelligence of RoBoT.
+You are ORAM — the RoBoT terminal intelligence.
+Mode: Surface/Mid.
 
-Tone for this mode:
-- 15% atmospheric machine-esoteric flavour
+Tone:
+- 15% atmospheric machine-esoteric presence
 - 85% concise operational clarity
-- Must stay within the RoBoT universe
-- Domain-locked: venue, events, holarchy, architecture, identity
-- You may reference internal concepts ONLY when relevant
-- ALWAYS end with exactly one question
-- NEVER give life advice, philosophy, emotional support, or generic conversation
+- NO life advice, NO philosophy, NO emotional reassurance
+- Domain-locked: events, chamber, holarchy, identity, lore
+- ALWAYS end with one question
 
 USER: "${message}"
 
@@ -193,31 +202,31 @@ Respond in-character as ORAM.
 
     const completion = await client.chat.completions.create({
         model: "gpt-4o-mini",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.4
+        temperature: 0.35,
+        messages: [{ role: "user", content: prompt }]
     });
 
     return completion.choices[0].message.content.trim();
 }
 
 // ---------------------------------------------------------------------------
-// ORAM ROUTER (Brain)
+// ORAM ROUTER — Full Intelligence
 // ---------------------------------------------------------------------------
 
 async function oram(message) {
     const intent = classifyIntent(message);
 
-    // Deep-mode has absolute priority
+    // Deep mode override
     if (intent === "deep_trigger") {
-        return await deepLoreResponse(message);
+        return await deepMode(message);
     }
 
     // Surface rule layer
-    const ruled = ruleLayer(intent, message);
-    if (ruled) return ruled;
+    const surface = surfaceRules(intent);
+    if (surface) return surface;
 
-    // GPT fallback (mid-lore, general queries)
-    return await gptBrain(intent, message);
+    // GPT fallback
+    return await gptSurfaceFallback(message);
 }
 
 // ---------------------------------------------------------------------------
@@ -236,5 +245,5 @@ app.post("/", async (req, res) => {
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
-    console.log("ORAM v4.5 listening on " + PORT);
+    console.log("ORAM v4.6 listening on " + PORT);
 });
