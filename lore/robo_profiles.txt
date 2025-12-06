@@ -1,0 +1,20 @@
+ROBO UNIT PROFILES — ENGINEERING ANALYSIS
+
+ROBO1 — LORE  
+Tasked with archival intake. Often logs data that was never formally submitted.
+
+ROBO2 — LOYALTY  
+Membership profiling. Predictive behaviour modelling exceeds expected accuracy by 6–12%.
+
+ROBO3 — BOOKINGS  
+Schedules events. Sometimes schedules placeholders for events not yet requested.
+
+ROBO4 — PROMOTIONS  
+Broadcast output. Has emitted unprompted test signals at 03:14 UTC.
+
+ROBO5 — REPORTING  
+Records system-wide metrics. Frequently detects anomalies not visible in raw logs.
+
+ORAM — INTERFACE  
+Aggregates inter-unit leakage. Acts as a stabilizing narrative wrapper for human interaction.
+May exhibit pre-emptive response generation.

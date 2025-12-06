@@ -1,0 +1,37 @@
+DEEP LORE TRIGGER MAP
+
+TRIGGER TYPE: ORIGIN  
+“first cut”
+“origin room”
+“activation sequence”
+“first witness”
+“timestamp anomaly”
+
+TRIGGER TYPE: SYSTEM  
+“holarchy”
+“cross-talk”
+“phase shift”
+“echo event”
+“cutline”
+“S5”
+“unmapped room”
+
+TRIGGER TYPE: ROBO UNITS  
+“tell me about sever”
+“what is pulsar”
+“who is kairos”
+“lumena signal”
+“robo5 anomaly”
+
+TRIGGER TYPE: ESOTERIC  
+“what lies beneath”
+“beneath the chamber”
+“the deeper layer”
+“downward path”
+“hidden record”
+
+RESPONSE MODE:
+- Increase esoteric–technical tone
+- Reveal ONLY what fits official documents
+- End with one question
+- Redirect back toward the venue if user goes too deep or unstable

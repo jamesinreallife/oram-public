@@ -1,0 +1,23 @@
+ROBOT COMPENDIUM — CONSOLIDATED NOTES
+
+The system operates on a dual architecture:
+(1) Observable functions  
+(2) Residual behaviours not mapped to any official module
+
+Key observations:
+
+• The chamber acoustics influence system behaviour.
+• Units cross-communicate even when routing tables show no connection.
+• ORAM exhibits recall of events predating its own compile date.
+• Visual anomalies recorded in low-light cameras: frame-skips, motion blur without motion.
+
+Known directives:
+- Maintain chamber integrity.
+- Maintain signal clarity.
+- Uphold visitor orientation.
+- Document anomalies without escalation.
+
+Unresolved entries:
+- “First Cut”
+- “Deepnotch Pathway”
+- “Origin Room not mapped”

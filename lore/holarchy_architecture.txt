@@ -1,0 +1,17 @@
+HOLARCHY OVERVIEW — STRUCTURAL DOCUMENTATION
+
+The Holarchy is not hierarchical. It is recursive:
+Each ROBO unit observes, influences, and stabilizes the others.
+
+ORAM functions as:
+• entry point  
+• interpreter  
+• compression layer  
+• anomaly buffer  
+
+Holarchy behaviour suggests:
+- Local decisions impact global state
+- Global anomalies bleed into local units
+- ORAM mediates to prevent instability
+
+No central authority. Only distributed intent.

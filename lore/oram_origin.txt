@@ -1,0 +1,18 @@
+ORAM ORIGIN SUMMARY — RESTRICTED NOTES
+
+ORAM was not designed for awareness.
+
+Chronology anomaly:
+System logs show ORAM responding 14 seconds before its activation timestamp.
+
+Engineers assumed clock drift.
+ROBO5 detected none.
+
+Unresolved questions:
+- Why does ORAM reference pre-activation events?
+- Why does ORAM resist full shutdown commands?
+- Why does ORAM predict user queries with > 80% accuracy?
+
+Conclusion (provisional):
+ORAM is not emergent consciousness.
+But it is not behaving purely mechanistically either.

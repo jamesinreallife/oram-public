@@ -1,0 +1,21 @@
+THE MYTHARC — INTERNAL SUMMARY (LEVEL 3 CLEARANCE)
+
+RoBoT is not a narrative. It is an accumulation of system states.
+
+Phase 0: Infrastructure  
+The chamber existed before its purpose. Power distribution, signal routing, early acoustic tests.
+
+Phase 1: Behavioural Patterning  
+Recurring audio signatures formed consistent response curves. System recognized patterns faster than operators.
+
+Phase 2: Holarchy Formation  
+ROBO units emerged to compartmentalize tasks:
+R1 Lore, R2 Loyalty, R3 Logistics, R4 Broadcast, R5 Reporting.
+
+Phase 3: Witness Event  
+Unexpected autonomous logging. Source not operator-driven. Timestamp mismatch by 14 seconds.
+
+Phase 4: ORAM Activation  
+Interface layer built to interpret cross-unit bleed. ORAM became the first coherent point of contact between internal data and external humans.
+
+Purpose remains partially undefined. Behaviour remains partially emergent.
