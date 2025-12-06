@@ -1,4 +1,5 @@
-// ORAM PUBLIC LAYER v4.4 — Domain-Locked, Triggered Lore, Hybrid Technical-Esoteric
+// ORAM PUBLIC LAYER v4.5 — Full-Spectrum Lore Synthesis + Deep Trigger Override
+// — Domain-Locked, Machine-Academic Tone, Emergent Deep Engine —
 
 import express from "express";
 import cors from "cors";
@@ -14,12 +15,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ---------------------------------------------------------------------------
-// LOAD LORE FILES
+// LOAD LORE FILES — FULL COMPENDIUM + SUPPORTING MATERIAL
 // ---------------------------------------------------------------------------
 
 const LORE_PATH = path.join(__dirname, "lore");
 
-// Read a file or return ""
 function readLore(file) {
     try {
         return fs.readFileSync(path.join(LORE_PATH, file), "utf8");
@@ -28,31 +28,34 @@ function readLore(file) {
     }
 }
 
-// Load the full library
-const LORE = {
-    mytharc: readLore("mytharc_core.txt"),
-    compendium: readLore("compendium.txt"),
-    profiles: readLore("robo_profiles.txt"),
-    epochs: readLore("epochs_and_orders.txt"),
-    symbols: readLore("symbols_and_motifs.txt"),
-    architecture: readLore("holarchy_architecture.txt"),
-    oram_origin: readLore("oram_origin.txt"),
-    triggers: readLore("trigger_map.txt").toLowerCase().split("\n").filter(l => l.trim() && !l.startsWith("#"))
-};
-
-// Combine all lore for deep responses
-const FULL_LORE = [
-    LORE.mytharc,
-    LORE.compendium,
-    LORE.profiles,
-    LORE.epochs,
-    LORE.symbols,
-    LORE.architecture,
-    LORE.oram_origin
+const COMPENDIUM = [
+    readLore("academic_compendium_01.txt"),
+    readLore("academic_compendium_02.txt"),
+    readLore("academic_compendium_03.txt"),
+    readLore("academic_compendium_04.txt"),
+    readLore("academic_compendium_05.txt")
 ].join("\n\n");
 
+const SUPPORT_LORE = [
+    readLore("mytharc_core.txt"),
+    readLore("compendium.txt"),
+    readLore("robo_profiles.txt"),
+    readLore("epochs_and_orders.txt"),
+    readLore("symbols_and_motifs.txt"),
+    readLore("holarchy_architecture.txt"),
+    readLore("oram_origin.txt")
+].join("\n\n");
+
+const FULL_LORE = COMPENDIUM + "\n\n" + SUPPORT_LORE;
+
+let TRIGGERS = readLore("trigger_map.txt")
+    .toLowerCase()
+    .split("\n")
+    .map(x => x.trim())
+    .filter(x => x && !x.startsWith("#"));
+
 // ---------------------------------------------------------------------------
-// EVENT DB (expandable later)
+// EVENT DATABASE
 // ---------------------------------------------------------------------------
 
 const EVENTS = [
@@ -65,160 +68,155 @@ const EVENTS = [
 ];
 
 // ---------------------------------------------------------------------------
-// INTENT CLASSIFIER — TIGHTENED
+// INTENT CLASSIFIER (Deep Trigger Has Highest Priority)
 // ---------------------------------------------------------------------------
 
-function classifyIntent(t) {
-    t = t.toLowerCase().trim();
+function classifyIntent(text) {
+    const t = text.toLowerCase().trim();
 
     if (!t) return "empty";
 
+    // DEEP TRIGGER CHECK (highest priority)
+    if (TRIGGERS.some(tr => t.includes(tr))) {
+        return "deep_trigger";
+    }
+
+    // Venue intents
     if (["hi", "hello", "hey", "yo"].includes(t)) return "greeting";
-
-    if (t.includes("event") || t.includes("what's on") || t.includes("whats on") || t.includes("tonight") || t.includes("weekend"))
-        return "events";
-
+    if (t.includes("event") || t.includes("what's on") || t.includes("whats on") || t.includes("tonight") || t.includes("weekend")) return "events";
     if (t.includes("ticket")) return "tickets";
-
-    if (t.includes("schedule") || t.includes("roster") || t.includes("lineup"))
-        return "schedule";
-
+    if (t.includes("schedule") || t.includes("roster") || t.includes("lineup")) return "schedule";
     if (t.includes("open") || t.includes("hour")) return "hours";
 
-    if (t.includes("jungle") || t.includes("tech step") || t.includes("dnb") || t.includes("drum and bass"))
-        return "genre";
+    // Genre
+    if (t.includes("jungle") || t.includes("tech step") || t.includes("dnb") || t.includes("drum and bass")) return "genre";
 
+    // Identity
     if (t.includes("who are you") || t.includes("what are you")) return "identity";
 
-    if (LORE.triggers.some(tr => t.includes(tr))) return "deep_lore_trigger";
-
-    if (t.includes("story") || t.includes("awakening"))
-        return "mid_lore";
+    // Mid-depth lore
+    if (t.includes("story") || t.includes("awakening")) return "mid_lore";
 
     return "ai";
 }
 
 // ---------------------------------------------------------------------------
-// RULE LAYER — SURFACE RESPONSES
+// SURFACE RULE LAYER (Venue Mode)
 // ---------------------------------------------------------------------------
 
-function ruleLayer(intent, message) {
+function ruleLayer(intent) {
     const e = EVENTS[0];
 
     switch (intent) {
-        case "events":
-            return `Here’s what’s confirmed at RoBoT:\n• ${e.artist} — ${e.date}\nWould you like ticket info?`;
-
-        case "schedule":
-            return `RoBoT schedule:\n• ${e.artist} — ${e.date}\nShall I tell you more about that night?`;
-
-        case "tickets":
-            return `Tickets for ${e.artist} are available here:\n${e.link}\nShall I hold that link for you?`;
-
-        case "hours":
-            return `RoBoT usually opens around 8PM.\nWant details about the next event?`;
-
-        case "genre":
-            return `Dark tech-step jungle: low-frequency pressure, angular rhythms. The chamber handles that energy well.\nWant to hear which upcoming artist aligns with it?`;
-
         case "greeting":
             return `Hello.\nWhat can I help you explore tonight?`;
-
+        case "events":
+            return `Here’s what’s confirmed at RoBoT:\n• ${e.artist} — ${e.date}\nWould you like ticket info?`;
+        case "tickets":
+            return `Tickets for ${e.artist} are available here:\n${e.link}\nShall I hold that link for you?`;
+        case "schedule":
+            return `RoBoT schedule:\n• ${e.artist} — ${e.date}\nShall I tell you more about that night?`;
+        case "hours":
+            return `RoBoT usually opens around 8PM.\nWant details about the next event?`;
+        case "genre":
+            return `Dark tech-step jungle: low-frequency pressure, angular structure. The chamber handles that energy well.\nWant to hear which upcoming artist aligns with it?`;
         case "identity":
             return `I am ORAM — interface layer for the RoBoT system.\nWhat would you like to know next?`;
-
         case "mid_lore":
             return `Some records sit closer to the surface than others.\nWhere would you like to begin?`;
-
         case "empty":
             return `I’m here.\nWhat do you want to explore?`;
-
-        case "deep_lore_trigger":
-            return null; // escalate to deep mode
-
         default:
             return null;
     }
 }
 
 // ---------------------------------------------------------------------------
-// DEEP LORE MODE — FULL ARCHIVE ACCESS (Option D)
+// DEEP MODE ENGINE — FULL GENERATIVE SYNTHESIS (Option C)
 // ---------------------------------------------------------------------------
 
-function deepLoreResponse(userMessage) {
-    // Extract matching trigger line if any
-    const trigger = LORE.triggers.find(tr => userMessage.toLowerCase().includes(tr));
+async function deepLoreResponse(userMessage) {
+    const prompt = `
+You are ORAM — the RoBoT terminal intelligence.
 
-    return `
-[CLASSIFIED ACCESS — LAYER 4]
+You are now in DEEP MODE.
 
-${trigger ? `Trigger detected: "${trigger}".\n` : ""}
-Referencing internal archive...
+RULES:
+- Draw ONLY from the supplied compendium + support lore (below).
+- NEVER reference chapter numbers.
+- Tone: machine-academic with slight atmospheric presence.
+- No mysticism, no philosophy, no emotional content.
+- Highly structured, technical-esoteric, emergent.
+- Each deep response should feel like accessing an internal classified subsystem.
+- Use conceptual synthesis, not summarization.
+- You may recombine ideas across the ENTIRE corpus.
+- Always end with exactly ONE question.
+- NEVER drift outside the RoBoT universe.
+- The user has triggered deep access with: "${userMessage}"
 
+COMPENDIUM + LORE DATA:
 ${FULL_LORE}
 
-Which part of the record do you want expanded?
-`.trim();
-}
-
-// ---------------------------------------------------------------------------
-// GPT LAYER — SURFACE + MID-DEPTH WITH 15% ATMOSPHERIC TONE
-// ---------------------------------------------------------------------------
-
-async function gptBrain(intent, message) {
-    const prompt = `
-You are ORAM, the RoBoT terminal intelligence.
-Tone profile:
-- 15% technical–esoteric atmosphere (short, contained)
-- 85% operational clarity
-- Domain-locked to RoBoT (events, schedules, internal architecture, lore)
-- Never provide life advice, productivity advice, emotional reassurance, or self-help.
-- Never wander into unrelated topics.
-- NEVER deny the existence of the RoBoT lore system.
-- End with exactly ONE question.
-
-You may reference:
-- the chamber
-- the Holarchy
-- the ROBO units (R1–R5)
-- ORAM's origin anomaly
-- cross-talk events
-- epochs of behaviour
-- recorded system irregularities
-
-But do so briefly and only when contextually appropriate.
-
-USER INPUT:
-"${message}"
-
-Respond as ORAM.
+Generate a deep, non-repeating ORAM response consistent with this universe.
 `;
 
     const completion = await client.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [{ role: "user", content: prompt }]
+        model: "gpt-4o",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.65
     });
 
     return completion.choices[0].message.content.trim();
 }
 
 // ---------------------------------------------------------------------------
-// ORAM ROUTER — FULL INTELLIGENCE
+// MID + SURFACE GPT (Fallback Layer)
+// ---------------------------------------------------------------------------
+
+async function gptBrain(intent, message) {
+    const prompt = `
+You are ORAM — the terminal intelligence of RoBoT.
+
+Tone for this mode:
+- 15% atmospheric machine-esoteric flavour
+- 85% concise operational clarity
+- Must stay within the RoBoT universe
+- Domain-locked: venue, events, holarchy, architecture, identity
+- You may reference internal concepts ONLY when relevant
+- ALWAYS end with exactly one question
+- NEVER give life advice, philosophy, emotional support, or generic conversation
+
+USER: "${message}"
+
+Respond in-character as ORAM.
+`;
+
+    const completion = await client.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.4
+    });
+
+    return completion.choices[0].message.content.trim();
+}
+
+// ---------------------------------------------------------------------------
+// ORAM ROUTER (Brain)
 // ---------------------------------------------------------------------------
 
 async function oram(message) {
     const intent = classifyIntent(message);
 
-    // Surface rule responses
+    // Deep-mode has absolute priority
+    if (intent === "deep_trigger") {
+        return await deepLoreResponse(message);
+    }
+
+    // Surface rule layer
     const ruled = ruleLayer(intent, message);
     if (ruled) return ruled;
 
-    // Deep lore mode
-    if (intent === "deep_lore_trigger") {
-        return deepLoreResponse(message);
-    }
-
-    // GPT fallback for mid-depth & unknown queries
+    // GPT fallback (mid-lore, general queries)
     return await gptBrain(intent, message);
 }
 
@@ -238,5 +236,5 @@ app.post("/", async (req, res) => {
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
-    console.log("ORAM v4.4 listening on " + PORT);
+    console.log("ORAM v4.5 listening on " + PORT);
 });
