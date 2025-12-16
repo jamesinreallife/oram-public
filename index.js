@@ -1,6 +1,6 @@
-// ORAM PUBLIC LAYER v4.7 — SAFE HANDOFF v1
-// Adds: internal intent emission for qualified booking interest
-// No UI, lore, or routing changes
+// ORAM PUBLIC LAYER v4.7 — SAFE HANDOFF v1 (PATH FIXED)
+// Fix: write internal intent queue to local runtime path
+// No behaviour, tone, or routing changes
 
 import express from "express";
 import cors from "cors";
@@ -25,10 +25,16 @@ const MAX_REQUESTS_PER_WINDOW = 5;
 const rateMap = new Map();
 
 // ---------------------------------------------------------------------------
-// INTERNAL HANDOFF TARGET
+// INTERNAL HANDOFF TARGET (RUNTIME-SAFE)
 // ---------------------------------------------------------------------------
 
-const INTENT_QUEUE_PATH = "/Volumes/RoBot/data/bridge/oram_intent_queue.jsonl";
+const DATA_DIR = path.join(__dirname, "data");
+const INTENT_QUEUE_PATH = path.join(DATA_DIR, "oram_intent_queue.jsonl");
+
+// Ensure data directory exists
+if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+}
 
 // ---------------------------------------------------------------------------
 // LOAD LORE FILES
@@ -246,5 +252,5 @@ app.post("/", async (req, res) => {
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
-    console.log("ORAM v4.7 listening on " + PORT);
+    console.log("ORAM v4.7 (handoff path fixed) listening on " + PORT);
 });
