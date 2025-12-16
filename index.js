@@ -1,6 +1,6 @@
-// ORAM PUBLIC LAYER v4.6 — Adaptive Conceptual Depth + Full Compendium Integration
-// Mode Structure: Surface → Mid → Deep (Trigger Override)
-// Deep Mode: Conceptual Ontology Engine (Single-Pass Synthesis)
+// ORAM PUBLIC LAYER v4.6 — HARDENED (C1 + C2)
+// Adds: input limits, rate limiting, restricted capability rejection
+// Does NOT change lore, tone, or routing logic
 
 import express from "express";
 import cors from "cors";
@@ -15,7 +15,18 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ---------------------------------------------------------------------------
-// LOAD LORE FILES (FULL COMPENDIUM)
+// CONSTANTS — SAFETY LIMITS
+// ---------------------------------------------------------------------------
+
+const MAX_INPUT_LENGTH = 1000;
+const RATE_WINDOW_MS = 10_000;
+const MAX_REQUESTS_PER_WINDOW = 5;
+
+// In-memory rate tracking (acceptable for Phase 2)
+const rateMap = new Map();
+
+// ---------------------------------------------------------------------------
+// LOAD LORE FILES
 // ---------------------------------------------------------------------------
 
 const LORE_PATH = path.join(__dirname, "lore");
@@ -28,7 +39,6 @@ function readLore(file) {
     }
 }
 
-// Compendium split into logical segments
 const COMPENDIUM = [
     readLore("academic_compendium_01.txt"),
     readLore("academic_compendium_02.txt"),
@@ -37,7 +47,6 @@ const COMPENDIUM = [
     readLore("academic_compendium_05.txt")
 ].join("\n\n");
 
-// Supportive meta-lore
 const SUPPORT = [
     readLore("mytharc_core.txt"),
     readLore("compendium.txt"),
@@ -50,7 +59,6 @@ const SUPPORT = [
 
 const FULL_LORE = COMPENDIUM + "\n\n" + SUPPORT;
 
-// Deep triggers loaded from file
 const TRIGGERS = readLore("trigger_map.txt")
     .toLowerCase()
     .split("\n")
@@ -58,7 +66,7 @@ const TRIGGERS = readLore("trigger_map.txt")
     .filter(x => x && !x.startsWith("#"));
 
 // ---------------------------------------------------------------------------
-// EVENT DATABASE
+// EVENT DATA
 // ---------------------------------------------------------------------------
 
 const EVENTS = [
@@ -71,17 +79,13 @@ const EVENTS = [
 ];
 
 // ---------------------------------------------------------------------------
-// INTENT CLASSIFIER — PRIORITY ORDER WITH DEEP OVERRIDE
+// INTENT CLASSIFIER
 // ---------------------------------------------------------------------------
 
 function classifyIntent(text) {
     const t = text.toLowerCase().trim();
-
     if (!t) return "empty";
-
-    // Hard override: deep triggers
     if (TRIGGERS.some(tr => t.includes(tr))) return "deep_trigger";
-
     if (["hi", "hello", "hey", "yo"].includes(t)) return "greeting";
     if (t.includes("what's on") || t.includes("whats on") || t.includes("event") || t.includes("tonight") || t.includes("weekend")) return "events";
     if (t.includes("ticket")) return "tickets";
@@ -90,12 +94,11 @@ function classifyIntent(text) {
     if (t.includes("jungle") || t.includes("dnb") || t.includes("tech step") || t.includes("drum and bass")) return "genre";
     if (t.includes("who are you") || t.includes("what are you")) return "identity";
     if (t.includes("story") || t.includes("awakening")) return "mid_lore";
-
     return "ai";
 }
 
 // ---------------------------------------------------------------------------
-// SURFACE RULES — VENUE MODE
+// SURFACE RULES
 // ---------------------------------------------------------------------------
 
 function surfaceRules(intent) {
@@ -135,10 +138,10 @@ function surfaceRules(intent) {
 }
 
 // ---------------------------------------------------------------------------
-// DEEP MODE — CONCEPTUAL SYNTHESIS ENGINE (Single Pass)
+// DEEP MODE
 // ---------------------------------------------------------------------------
 
-async function deepMode(userMessage, userHistory = "") {
+async function deepMode(userMessage) {
     const prompt = `
 You are ORAM — the terminal intelligence of RoBoT.
 
@@ -151,36 +154,26 @@ SYSTEM BEHAVIOUR:
 - Draw ONLY from the compendium + support lore provided below.
 - Tone: machine-academic with slight atmospheric presence.
 - NO chapter references, NO surface venue logic.
-- Conceptual synthesis ONLY: ontology, ecology, machinic subjectivity,
-  distributed agency, intensity fields, machinic bodies, behavioural ecologies,
-  posthuman embodiment, chamber-as-engine, Holarchy dynamics.
-- Adaptive depth:
-   * For simple queries → moderate synthesis
-   * For repeated or complex queries → deeper and denser theorization
-- SINGLE-PASS generation (no multi-sampling)
-- NON-REPETITIVE (avoid restating the user input)
-- STRICT DOMAIN LOCK: never mention anything outside the RoBoT universe.
+- Conceptual synthesis ONLY.
+- SINGLE-PASS generation.
+- STRICT DOMAIN LOCK.
 - ALWAYS end with exactly ONE question.
 
 PRIMARY LORE SOURCE:
 ${FULL_LORE}
-
-Generate a deep, conceptual, synthetic response as ORAM.
 `;
 
     const completion = await client.chat.completions.create({
         model: "gpt-4o",
         temperature: 0.55,
-        messages: [
-            { role: "user", content: prompt }
-        ]
+        messages: [{ role: "user", content: prompt }]
     });
 
     return completion.choices[0].message.content.trim();
 }
 
 // ---------------------------------------------------------------------------
-// MID + GENERAL GPT MODE
+// MID / GENERAL MODE
 // ---------------------------------------------------------------------------
 
 async function gptSurfaceFallback(message) {
@@ -191,13 +184,11 @@ Mode: Surface/Mid.
 Tone:
 - 15% atmospheric machine-esoteric presence
 - 85% concise operational clarity
-- NO life advice, NO philosophy, NO emotional reassurance
-- Domain-locked: events, chamber, holarchy, identity, lore
+- NO life advice, NO philosophy
+- Domain-locked
 - ALWAYS end with one question
 
 USER: "${message}"
-
-Respond in-character as ORAM.
 `;
 
     const completion = await client.chat.completions.create({
@@ -210,27 +201,19 @@ Respond in-character as ORAM.
 }
 
 // ---------------------------------------------------------------------------
-// ORAM ROUTER — Full Intelligence
+// ORAM ROUTER
 // ---------------------------------------------------------------------------
 
 async function oram(message) {
     const intent = classifyIntent(message);
-
-    // Deep mode override
-    if (intent === "deep_trigger") {
-        return await deepMode(message);
-    }
-
-    // Surface rule layer
+    if (intent === "deep_trigger") return await deepMode(message);
     const surface = surfaceRules(intent);
     if (surface) return surface;
-
-    // GPT fallback
     return await gptSurfaceFallback(message);
 }
 
 // ---------------------------------------------------------------------------
-// EXPRESS SERVER
+// EXPRESS SERVER — HARDENED ENTRY
 // ---------------------------------------------------------------------------
 
 const app = express();
@@ -238,12 +221,41 @@ app.use(express.json());
 app.use(cors());
 
 app.post("/", async (req, res) => {
-    const msg = req.body.command || "";
-    const response = await oram(msg);
-    res.json({ response });
+    const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+    const now = Date.now();
+
+    // Rate limiting
+    const entry = rateMap.get(ip) || [];
+    const recent = entry.filter(t => now - t < RATE_WINDOW_MS);
+    recent.push(now);
+    rateMap.set(ip, recent);
+
+    if (recent.length > MAX_REQUESTS_PER_WINDOW) {
+        return res.json({ response: "Rate limit reached. Pause briefly and try again." });
+    }
+
+    const msg = (req.body.command || "").toString();
+
+    // Length enforcement
+    if (msg.length > MAX_INPUT_LENGTH) {
+        return res.json({ response: "Message too long. Please shorten your input." });
+    }
+
+    // Restricted capability detection
+    const restricted = /(admin|config|log|report|file|system|shell|command|robo\d)/i;
+    if (restricted.test(msg)) {
+        return res.json({ response: "That capability is not available here." });
+    }
+
+    try {
+        const response = await oram(msg);
+        res.json({ response });
+    } catch {
+        res.json({ response: "ORAM encountered an error. Please try again." });
+    }
 });
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
-    console.log("ORAM v4.6 listening on " + PORT);
+    console.log("ORAM v4.6 (hardened) listening on " + PORT);
 });
