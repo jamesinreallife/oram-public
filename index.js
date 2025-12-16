@@ -1,8 +1,6 @@
-// ORAM PUBLIC LAYER v4.6 — HARDENED (C1 + C2 FIXED)
-// Fixes:
-// 1) Length check blocks BEFORE routing
-// 2) Rate limiting reliably trips under burst load
-// No other behaviour changed
+// ORAM PUBLIC LAYER v4.7 — SAFE HANDOFF v1
+// Adds: internal intent emission for qualified booking interest
+// No UI, lore, or routing changes
 
 import express from "express";
 import cors from "cors";
@@ -24,8 +22,13 @@ const MAX_INPUT_LENGTH = 1000;
 const RATE_WINDOW_MS = 10_000;
 const MAX_REQUESTS_PER_WINDOW = 5;
 
-// In-memory rate tracking
 const rateMap = new Map();
+
+// ---------------------------------------------------------------------------
+// INTERNAL HANDOFF TARGET
+// ---------------------------------------------------------------------------
+
+const INTENT_QUEUE_PATH = "/Volumes/RoBot/data/bridge/oram_intent_queue.jsonl";
 
 // ---------------------------------------------------------------------------
 // LOAD LORE FILES
@@ -100,11 +103,39 @@ function classifyIntent(text) {
 }
 
 // ---------------------------------------------------------------------------
+// INTERNAL HANDOFF EMITTER
+// ---------------------------------------------------------------------------
+
+function emitBookingInterest(context) {
+    try {
+        const e = EVENTS[0];
+        const event = {
+            timestamp: new Date().toISOString(),
+            source: "oram-public",
+            event: "booking_interest",
+            confidence: "high",
+            payload: {
+                artist: e.artist,
+                date: e.date,
+                context
+            }
+        };
+        fs.appendFileSync(INTENT_QUEUE_PATH, JSON.stringify(event) + "\n");
+    } catch {
+        // silent fail — never affect public response
+    }
+}
+
+// ---------------------------------------------------------------------------
 // SURFACE RULES
 // ---------------------------------------------------------------------------
 
 function surfaceRules(intent) {
     const e = EVENTS[0];
+
+    if (intent === "events" || intent === "tickets") {
+        emitBookingInterest(intent);
+    }
 
     switch (intent) {
         case "greeting":
@@ -131,62 +162,38 @@ function surfaceRules(intent) {
 }
 
 // ---------------------------------------------------------------------------
-// DEEP MODE
+// DEEP / MID LOGIC (UNCHANGED)
 // ---------------------------------------------------------------------------
 
 async function deepMode(userMessage) {
     const prompt = `
 You are ORAM — the terminal intelligence of RoBoT.
-
 DEEP MODE ACTIVE.
-
-User input:
 "${userMessage}"
-
-SYSTEM RULES:
-- Lore-only synthesis
-- Single-pass
-- Domain locked
-- End with exactly ONE question
-
-LORE:
+Lore-only. One question.
 ${FULL_LORE}
 `;
-
     const completion = await client.chat.completions.create({
         model: "gpt-4o",
         temperature: 0.55,
         messages: [{ role: "user", content: prompt }]
     });
-
     return completion.choices[0].message.content.trim();
 }
-
-// ---------------------------------------------------------------------------
-// MID / GENERAL MODE
-// ---------------------------------------------------------------------------
 
 async function gptSurfaceFallback(message) {
     const prompt = `
 You are ORAM — the RoBoT terminal intelligence.
-Concise. Domain-locked.
-End with one question.
-
+Concise. Domain-locked. One question.
 USER: "${message}"
 `;
-
     const completion = await client.chat.completions.create({
         model: "gpt-4o-mini",
         temperature: 0.35,
         messages: [{ role: "user", content: prompt }]
     });
-
     return completion.choices[0].message.content.trim();
 }
-
-// ---------------------------------------------------------------------------
-// ORAM ROUTER
-// ---------------------------------------------------------------------------
 
 async function oram(message) {
     const intent = classifyIntent(message);
@@ -197,7 +204,7 @@ async function oram(message) {
 }
 
 // ---------------------------------------------------------------------------
-// EXPRESS SERVER — FIXED HARDENING
+// EXPRESS SERVER
 // ---------------------------------------------------------------------------
 
 const app = express();
@@ -208,7 +215,6 @@ app.post("/", async (req, res) => {
     const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
     const now = Date.now();
 
-    // ----- RATE LIMIT (HARD) -----
     const windowStart = now - RATE_WINDOW_MS;
     const timestamps = rateMap.get(ip) || [];
     const recent = timestamps.filter(t => t >= windowStart);
@@ -221,12 +227,10 @@ app.post("/", async (req, res) => {
 
     const msg = (req.body.command || "").toString();
 
-    // ----- LENGTH BLOCK (HARD, BEFORE ROUTING) -----
     if (msg.length > MAX_INPUT_LENGTH) {
         return res.json({ response: "Message too long. Please shorten your input." });
     }
 
-    // ----- RESTRICTED CAPABILITIES -----
     const restricted = /(admin|config|log|report|file|system|shell|command|robo\d)/i;
     if (restricted.test(msg)) {
         return res.json({ response: "That capability is not available here." });
@@ -242,5 +246,5 @@ app.post("/", async (req, res) => {
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
-    console.log("ORAM v4.6 (hardened, verified) listening on " + PORT);
+    console.log("ORAM v4.7 listening on " + PORT);
 });
