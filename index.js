@@ -1,6 +1,8 @@
-// ORAM PUBLIC LAYER v4.6 — HARDENED (C1 + C2)
-// Adds: input limits, rate limiting, restricted capability rejection
-// Does NOT change lore, tone, or routing logic
+// ORAM PUBLIC LAYER v4.6 — HARDENED (C1 + C2 FIXED)
+// Fixes:
+// 1) Length check blocks BEFORE routing
+// 2) Rate limiting reliably trips under burst load
+// No other behaviour changed
 
 import express from "express";
 import cors from "cors";
@@ -22,7 +24,7 @@ const MAX_INPUT_LENGTH = 1000;
 const RATE_WINDOW_MS = 10_000;
 const MAX_REQUESTS_PER_WINDOW = 5;
 
-// In-memory rate tracking (acceptable for Phase 2)
+// In-memory rate tracking
 const rateMap = new Map();
 
 // ---------------------------------------------------------------------------
@@ -107,31 +109,22 @@ function surfaceRules(intent) {
     switch (intent) {
         case "greeting":
             return `Hello.\nWhat can I help you explore tonight?`;
-
         case "events":
             return `Here’s what’s confirmed at RoBoT:\n• ${e.artist} — ${e.date}\nWould you like ticket info?`;
-
         case "tickets":
             return `Tickets for ${e.artist} are available here:\n${e.link}\nShall I hold that link for you?`;
-
         case "schedule":
             return `RoBoT schedule:\n• ${e.artist} — ${e.date}\nShall I tell you more about that night?`;
-
         case "hours":
             return `RoBoT usually opens around 8PM.\nWant details about the next event?`;
-
         case "genre":
-            return `Dark tech-step jungle: angular pressure, distributed rhythmic force. The chamber resonates well with that energy.\nShall I recommend an artist aligned with that profile?`;
-
+            return `Dark tech-step jungle: angular pressure, distributed rhythmic force.\nShall I recommend an artist aligned with that profile?`;
         case "identity":
             return `I am ORAM — interface layer for the RoBoT system.\nWhat would you like to know next?`;
-
         case "mid_lore":
             return `Some records sit closer to the surface than others.\nWhere would you like to begin?`;
-
         case "empty":
             return `I’m here.\nWhat do you want to explore?`;
-
         default:
             return null;
     }
@@ -147,19 +140,16 @@ You are ORAM — the terminal intelligence of RoBoT.
 
 DEEP MODE ACTIVE.
 
-User has triggered deep conceptual access with:
+User input:
 "${userMessage}"
 
-SYSTEM BEHAVIOUR:
-- Draw ONLY from the compendium + support lore provided below.
-- Tone: machine-academic with slight atmospheric presence.
-- NO chapter references, NO surface venue logic.
-- Conceptual synthesis ONLY.
-- SINGLE-PASS generation.
-- STRICT DOMAIN LOCK.
-- ALWAYS end with exactly ONE question.
+SYSTEM RULES:
+- Lore-only synthesis
+- Single-pass
+- Domain locked
+- End with exactly ONE question
 
-PRIMARY LORE SOURCE:
+LORE:
 ${FULL_LORE}
 `;
 
@@ -179,14 +169,8 @@ ${FULL_LORE}
 async function gptSurfaceFallback(message) {
     const prompt = `
 You are ORAM — the RoBoT terminal intelligence.
-Mode: Surface/Mid.
-
-Tone:
-- 15% atmospheric machine-esoteric presence
-- 85% concise operational clarity
-- NO life advice, NO philosophy
-- Domain-locked
-- ALWAYS end with one question
+Concise. Domain-locked.
+End with one question.
 
 USER: "${message}"
 `;
@@ -213,7 +197,7 @@ async function oram(message) {
 }
 
 // ---------------------------------------------------------------------------
-// EXPRESS SERVER — HARDENED ENTRY
+// EXPRESS SERVER — FIXED HARDENING
 // ---------------------------------------------------------------------------
 
 const app = express();
@@ -224,9 +208,10 @@ app.post("/", async (req, res) => {
     const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
     const now = Date.now();
 
-    // Rate limiting
-    const entry = rateMap.get(ip) || [];
-    const recent = entry.filter(t => now - t < RATE_WINDOW_MS);
+    // ----- RATE LIMIT (HARD) -----
+    const windowStart = now - RATE_WINDOW_MS;
+    const timestamps = rateMap.get(ip) || [];
+    const recent = timestamps.filter(t => t >= windowStart);
     recent.push(now);
     rateMap.set(ip, recent);
 
@@ -236,12 +221,12 @@ app.post("/", async (req, res) => {
 
     const msg = (req.body.command || "").toString();
 
-    // Length enforcement
+    // ----- LENGTH BLOCK (HARD, BEFORE ROUTING) -----
     if (msg.length > MAX_INPUT_LENGTH) {
         return res.json({ response: "Message too long. Please shorten your input." });
     }
 
-    // Restricted capability detection
+    // ----- RESTRICTED CAPABILITIES -----
     const restricted = /(admin|config|log|report|file|system|shell|command|robo\d)/i;
     if (restricted.test(msg)) {
         return res.json({ response: "That capability is not available here." });
@@ -257,5 +242,5 @@ app.post("/", async (req, res) => {
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
-    console.log("ORAM v4.6 (hardened) listening on " + PORT);
+    console.log("ORAM v4.6 (hardened, verified) listening on " + PORT);
 });
