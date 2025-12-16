@@ -1,123 +1,169 @@
-// ORAM PUBLIC LAYER — PHASE 1 MULTI-ROBO TERMINAL
-// Scope: attribution + delegation only
-// No automation, no persistence, no ops
+// ORAM PUBLIC LAYER — PHASE 2 (HARD FLOOR CONTROL ENABLED)
+// Single authoritative backend file
 
 import express from "express";
 import cors from "cors";
+import OpenAI from "openai";
 
-// ---------------------------------------------------------------------
-// ROBO REGISTRY (PHASE 1 — HARD CODED)
-// ---------------------------------------------------------------------
+const app = express();
+app.use(cors());
+app.use(express.json());
 
-const ROBOS = {
-  ORAM: { name: "ORAM", color: "#00CFFF" },
-  PULSAR: { name: "PULSAR", color: "#FFD700" },
-  KAIROS: { name: "KAIROS", color: "#FF8C00" },
-  LUMENA: { name: "LUMENA", color: "#FF4FD8" },
-  SEVER: { name: "SEVER", color: "#7F7F7F" }
-};
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
-// ---------------------------------------------------------------------
-// INTENT CLASSIFICATION (SIMPLE, DETERMINISTIC)
-// ---------------------------------------------------------------------
+const PORT = process.env.PORT || 10000;
 
-function classifyIntent(input) {
-  const t = input.toLowerCase();
+/* =========================================================
+   EVENT DATA (CURRENTLY STATIC — OK FOR NOW)
+========================================================= */
 
-  if (t.includes("member") || t.includes("loyalty")) return "membership";
-  if (t.includes("book") || t.includes("booking")) return "booking";
-  if (t.includes("promo") || t.includes("promote")) return "promotion";
-  if (t.includes("report") || t.includes("log")) return "audit";
+const EVENTS = [
+  {
+    artist: "Circuit Prophet",
+    date: "21 December 2025",
+    link: "https://saltbox.flicket.co.nz/circuitprophet"
+  }
+];
+
+/* =========================================================
+   UTIL
+========================================================= */
+
+function msg(agent, text) {
+  return { agent, text };
+}
+
+/* =========================================================
+   HARD FLOOR ROBO RESPONSES
+========================================================= */
+
+function forcedRoboResponse(robo) {
+  switch (robo) {
+    case "KAIROS":
+      return msg(
+        "KAIROS",
+        "Thanks for reaching out. I can help with bookings. What date, artist, and format are you proposing?"
+      );
+
+    case "PULSAR":
+      return msg(
+        "PULSAR",
+        "I manage membership and loyalty. What would you like help with?"
+      );
+
+    case "LUMENA":
+      return msg(
+        "LUMENA",
+        "I handle promotions and broadcasts. What event or release are you preparing to promote?"
+      );
+
+    case "SEVER":
+      return msg(
+        "SEVER",
+        "Analysis channel open. What would you like reviewed?"
+      );
+
+    default:
+      return msg(
+        robo,
+        "How can I assist you?"
+      );
+  }
+}
+
+/* =========================================================
+   ORAM NORMAL INTENT HANDLING (UNCHANGED BEHAVIOUR)
+========================================================= */
+
+function classifyIntent(text) {
+  const t = text.toLowerCase();
+
+  if (t.includes("event") || t.includes("what's on")) return "events";
+  if (t.includes("ticket")) return "tickets";
+  if (t.includes("booking")) return "booking";
+  if (!t.trim()) return "empty";
 
   return "general";
 }
 
-// ---------------------------------------------------------------------
-// MULTI-ROBO ROUTER
-// ---------------------------------------------------------------------
-
-function routeMessage(userInput) {
-  const intent = classifyIntent(userInput);
-  const messages = [];
-
-  // ORAM always speaks first
-  messages.push({
-    agent: "ORAM",
-    text: "Signal received. Processing request."
-  });
+function surfaceResponse(intent) {
+  const e = EVENTS[0];
 
   switch (intent) {
-    case "membership":
-      messages.push({
-        agent: "ORAM",
-        text: "Delegating to PULSAR."
-      });
-      messages.push({
-        agent: "PULSAR",
-        text: "I handle loyalty and membership. What would you like to know?"
-      });
-      break;
+    case "events":
+      return msg(
+        "ORAM",
+        `Here’s what’s confirmed at RoBoT:\n• ${e.artist} — ${e.date}\nWould you like ticket info?`
+      );
+
+    case "tickets":
+      return msg(
+        "ORAM",
+        `Tickets for ${e.artist} are available here:\n${e.link}`
+      );
 
     case "booking":
-      messages.push({
-        agent: "ORAM",
-        text: "Passing booking enquiry to KAIROS."
-      });
-      messages.push({
-        agent: "KAIROS",
-        text: "Thanks for the enquiry. What date, artist, and format are you proposing?"
-      });
-      break;
+      return [
+        msg("ORAM", "Passing booking enquiry to KAIROS."),
+        msg(
+          "KAIROS",
+          "Thanks for the enquiry. What date, artist, and format are you proposing?"
+        )
+      ];
 
-    case "promotion":
-      messages.push({
-        agent: "ORAM",
-        text: "Routing promotion-related work to LUMENA."
-      });
-      messages.push({
-        agent: "LUMENA",
-        text: "Promotion requires confirmed booking details. Please specify the event."
-      });
-      break;
-
-    case "audit":
-      messages.push({
-        agent: "ORAM",
-        text: "SEVER has been notified."
-      });
-      messages.push({
-        agent: "SEVER",
-        text: "Audit layer active. No anomalies detected."
-      });
-      break;
+    case "empty":
+      return msg("ORAM", "I’m here. What would you like to explore?");
 
     default:
-      messages.push({
-        agent: "ORAM",
-        text: "Clarify your intent. You may ask about bookings, membership, or promotions."
-      });
+      return msg("ORAM", "Acknowledged. What would you like to explore?");
+  }
+}
+
+/* =========================================================
+   MAIN ROUTER
+========================================================= */
+
+async function oramRouter(command, forcedSpeaker) {
+  const messages = [];
+
+  // HARD FLOOR CONTROL — OVERRIDE EVERYTHING
+  if (forcedSpeaker) {
+    messages.push(forcedRoboResponse(forcedSpeaker));
+    return messages;
   }
 
+  // Normal ORAM flow
+  const intent = classifyIntent(command);
+  const response = surfaceResponse(intent);
+
+  if (Array.isArray(response)) {
+    return response;
+  }
+
+  messages.push(response);
   return messages;
 }
 
-// ---------------------------------------------------------------------
-// EXPRESS SERVER
-// ---------------------------------------------------------------------
+/* =========================================================
+   HTTP ENTRYPOINT
+========================================================= */
 
-const app = express();
-app.use(express.json());
-app.use(cors());
+app.post("/", async (req, res) => {
+  try {
+    const { command = "", forced_speaker = null } = req.body;
 
-app.post("/", (req, res) => {
-  const input = (req.body.command || "").trim();
+    const messages = await oramRouter(command, forced_speaker);
 
-  const messages = routeMessage(input);
-
-  res.json({ messages });
+    res.json({ messages });
+  } catch (err) {
+    res.status(500).json({
+      messages: [msg("SYSTEM", "Internal error.")]
+    });
+  }
 });
 
-const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
-  console.log("ORAM Phase 1 Multi-ROBO terminal listening on", PORT);
+  console.log("ORAM Phase 2 (Hard Floor Control) listening on " + PORT);
 });
